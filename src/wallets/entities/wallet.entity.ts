@@ -51,9 +51,9 @@ export class Wallet {
   @OneToMany(() => Transaction, (transaction) => transaction.wallet)
   transactions!: Transaction[];
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }
