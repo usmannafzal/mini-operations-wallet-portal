@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Decimal from 'decimal.js';
-import { Between, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { And, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import {
   Transaction,
   TransactionType,
@@ -24,9 +24,11 @@ export class ReportsService {
     }
     const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
 
+    // Half-open UTC day window: [start, end). `&&` on FindOperators is invalid —
+    // it collapses to only the right-hand operator and ignores the start bound.
     const transactions = await this.transactionsRepository.find({
       where: {
-        createdAt: MoreThanOrEqual(start) && LessThan(end), 
+        createdAt: And(MoreThanOrEqual(start), LessThan(end)),
       },
     });
 

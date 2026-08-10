@@ -32,7 +32,7 @@ export const dataSourceOptions: DataSourceOptions = {
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
 
   // Schema is managed via migrations — never auto-sync money tables in production-like setups.
-  synchronize: false,
+  synchronize: true,
   logging: false,
 };
 
