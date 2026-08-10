@@ -16,6 +16,15 @@ export enum WalletStatus {
   INACTIVE = 'inactive',
 }
 
+export enum Currency {
+  USD = 'USD',
+  EUR = 'EUR',
+  GBP = 'GBP',
+  JPY = 'JPY',
+  KRW = 'KRW',
+  CNY = 'CNY',
+}
+
 @Entity()
 export class Wallet {
   @PrimaryGeneratedColumn('uuid')
@@ -28,7 +37,7 @@ export class Wallet {
   @JoinColumn({ name: 'userId' })
   user!: User;
 
-  @Column({ type: 'varchar', length: 3 })
+  @Column({ type: "enum", enum: Currency })
   currency!: string;
 
   /**
