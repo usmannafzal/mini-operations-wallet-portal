@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsISO4217CurrencyCode, IsUUID } from 'class-validator';
+import { IsEnum, IsISO4217CurrencyCode, IsUUID } from 'class-validator';
+import { Currency } from '../entities/wallet.entity';
 
 export class CreateWalletDto {
   @ApiProperty({
@@ -10,10 +11,10 @@ export class CreateWalletDto {
   @IsUUID()
   userId: string;
 
-  @ApiProperty({ example: 'USD', description: 'ISO-4217 currency code' })
+  @ApiProperty({ enum: Currency, enumName: 'Currency', example: Currency.USD, description: 'Currency of the wallet', })
   // Normalise to upper case first so "usd" is accepted, then validate it's a real
   // ISO-4217 code. Balance always starts at 0, so it's not part of the DTO.
-  @Transform(({ value }) => (typeof value === 'string' ? value.toUpperCase() : value))
-  @IsISO4217CurrencyCode()
+  @Transform(({ value }) => typeof value === 'string' ? value.toUpperCase() : value, )
+  @IsEnum(Currency, { message: 'currency must be one of: USD, EUR, GBP, JPY, KRW, CNY', })
   currency: string;
 }
