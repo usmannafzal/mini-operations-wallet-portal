@@ -17,26 +17,26 @@ export enum UserStatus {
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar' })
-  name: string;
+  name!: string;
 
   @Column({ type: 'varchar' })
-  phone: string;
+  phone!: string;
 
   @Column({ type: 'varchar' })
-  email: string;
+  email!: string;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
-  status: UserStatus;
+  status!: UserStatus;
 
   @OneToMany(() => Wallet, (wallet) => wallet.user)
-  wallets: Wallet[];
+  wallets!: Wallet[];
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }
