@@ -40,8 +40,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- API: http://localhost:3000
-- Swagger UI: http://localhost:3000/docs
+- API: http://localhost:3001
+- Swagger UI: http://localhost:3001/docs
 
 ## Running locally (without Docker for the app)
 
@@ -49,7 +49,7 @@ Requires Node 22+ and a reachable Postgres. You can start just the database with
 
 ```bash
 cp .env.example .env
-docker compose up -d db        # Postgres on localhost:5432
+docker compose up -d db        # Postgres on localhost:5433
 
 yarn install
 yarn migration:run             # builds, then applies pending migrations
@@ -82,12 +82,12 @@ Defined in `.env` (see `.env.example`). The app and the migration CLI read the s
 
 | Variable      | Description                          | Local default |
 | ------------- | ------------------------------------ | ------------- |
-| `PORT`        | HTTP port the API listens on         | `3000`        |
+| `PORT`        | HTTP port the API listens on         | `3001`        |
 | `DB_HOST`     | Postgres host (`db` inside compose)  | `localhost`   |
-| `DB_PORT`     | Postgres port                        | `5432`        |
+| `DB_PORT`     | Postgres host port (maps to 5432)    | `5433`        |
 | `DB_USERNAME` | Postgres user                        | `postgres`    |
 | `DB_PASSWORD` | Postgres password                    | `postgres`    |
-| `DB_NAME`     | Postgres database                    | `wallet`      |
+| `DB_NAME`     | Postgres database                    | `mini_operations_wallet_portal` |
 
 ## Architecture overview
 
