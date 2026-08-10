@@ -5,7 +5,11 @@ import {
   Transaction,
   TransactionType,
 } from '../wallets/entities/transaction.entity';
-import { Wallet, WalletStatus } from '../wallets/entities/wallet.entity';
+import {
+  Currency,
+  Wallet,
+  WalletStatus,
+} from '../wallets/entities/wallet.entity';
 
 /**
  * Idempotent demo seed for local testing of wallets, transactions, and daily reports.
@@ -29,7 +33,7 @@ type PlannedTx = {
 };
 
 type SeedWalletPlan = {
-  currency: string;
+  currency: Currency;
   transactions: PlannedTx[];
 };
 
@@ -47,17 +51,17 @@ const SEED_USERS: SeedUserPlan[] = [
     email: 'seed.aisha@example.com',
     wallets: [
       {
-        currency: 'PKR',
+        currency: Currency.JPY,
         transactions: [
-          { dayOffset: -3, hour: 9, minute: 15, type: TransactionType.CREDIT, amount: '5000.0000', description: 'Opening top-up', ref: 'pkr-open' },
-          { dayOffset: -3, hour: 14, minute: 40, type: TransactionType.DEBIT, amount: '450.5000', description: 'Driver payout', ref: 'pkr-payout-1' },
-          { dayOffset: -2, hour: 10, minute: 5, type: TransactionType.CREDIT, amount: '1200.0000', description: 'Ops refill', ref: 'pkr-refill-1' },
-          { dayOffset: -2, hour: 18, minute: 22, type: TransactionType.DEBIT, amount: '300.0000', description: 'Vendor settlement', ref: 'pkr-vendor-1' },
-          { dayOffset: -1, hour: 8, minute: 0, type: TransactionType.CREDIT, amount: '800.2500', description: 'Courier float', ref: 'pkr-float-1' },
-          { dayOffset: -1, hour: 16, minute: 45, type: TransactionType.DEBIT, amount: '125.7500', description: 'Fuel reimbursement', ref: 'pkr-fuel-1' },
-          { dayOffset: 0, hour: 7, minute: 30, type: TransactionType.CREDIT, amount: '2000.0000', description: 'Morning credit', ref: 'pkr-morning' },
-          { dayOffset: 0, hour: 11, minute: 10, type: TransactionType.DEBIT, amount: '575.0000', description: 'Rider bonus', ref: 'pkr-bonus' },
-          { dayOffset: 0, hour: 15, minute: 55, type: TransactionType.DEBIT, amount: '90.0000', description: 'Support adjustment', ref: 'pkr-adj' },
+          { dayOffset: -3, hour: 9, minute: 15, type: TransactionType.CREDIT, amount: '5000.0000', description: 'Opening top-up', ref: 'jpy-open' },
+          { dayOffset: -3, hour: 14, minute: 40, type: TransactionType.DEBIT, amount: '450.5000', description: 'Driver payout', ref: 'jpy-payout-1' },
+          { dayOffset: -2, hour: 10, minute: 5, type: TransactionType.CREDIT, amount: '1200.0000', description: 'Ops refill', ref: 'jpy-refill-1' },
+          { dayOffset: -2, hour: 18, minute: 22, type: TransactionType.DEBIT, amount: '300.0000', description: 'Vendor settlement', ref: 'jpy-vendor-1' },
+          { dayOffset: -1, hour: 8, minute: 0, type: TransactionType.CREDIT, amount: '800.2500', description: 'Courier float', ref: 'jpy-float-1' },
+          { dayOffset: -1, hour: 16, minute: 45, type: TransactionType.DEBIT, amount: '125.7500', description: 'Fuel reimbursement', ref: 'jpy-fuel-1' },
+          { dayOffset: 0, hour: 7, minute: 30, type: TransactionType.CREDIT, amount: '2000.0000', description: 'Morning credit', ref: 'jpy-morning' },
+          { dayOffset: 0, hour: 11, minute: 10, type: TransactionType.DEBIT, amount: '575.0000', description: 'Rider bonus', ref: 'jpy-bonus' },
+          { dayOffset: 0, hour: 15, minute: 55, type: TransactionType.DEBIT, amount: '90.0000', description: 'Support adjustment', ref: 'jpy-adj' },
         ],
       },
     ],
@@ -68,7 +72,7 @@ const SEED_USERS: SeedUserPlan[] = [
     email: 'seed.bilal@example.com',
     wallets: [
       {
-        currency: 'USD',
+        currency: Currency.USD,
         transactions: [
           { dayOffset: -2, hour: 12, minute: 0, type: TransactionType.CREDIT, amount: '250.0000', description: 'USD wallet funding', ref: 'usd-fund' },
           { dayOffset: -1, hour: 9, minute: 20, type: TransactionType.DEBIT, amount: '40.5000', description: 'Intl settlement', ref: 'usd-settle' },
@@ -78,12 +82,12 @@ const SEED_USERS: SeedUserPlan[] = [
         ],
       },
       {
-        currency: 'AED',
+        currency: Currency.EUR,
         transactions: [
-          { dayOffset: -3, hour: 11, minute: 0, type: TransactionType.CREDIT, amount: '1000.0000', description: 'AED opening', ref: 'aed-open' },
-          { dayOffset: -1, hour: 14, minute: 15, type: TransactionType.DEBIT, amount: '220.0000', description: 'Dubai vendor', ref: 'aed-vendor' },
-          { dayOffset: 0, hour: 9, minute: 45, type: TransactionType.CREDIT, amount: '150.0000', description: 'Ops credit', ref: 'aed-ops' },
-          { dayOffset: 0, hour: 17, minute: 0, type: TransactionType.DEBIT, amount: '55.5000', description: 'Driver tip pool', ref: 'aed-tips' },
+          { dayOffset: -3, hour: 11, minute: 0, type: TransactionType.CREDIT, amount: '1000.0000', description: 'EUR opening', ref: 'eur-open' },
+          { dayOffset: -1, hour: 14, minute: 15, type: TransactionType.DEBIT, amount: '220.0000', description: 'EU vendor', ref: 'eur-vendor' },
+          { dayOffset: 0, hour: 9, minute: 45, type: TransactionType.CREDIT, amount: '150.0000', description: 'Ops credit', ref: 'eur-ops' },
+          { dayOffset: 0, hour: 17, minute: 0, type: TransactionType.DEBIT, amount: '55.5000', description: 'Driver tip pool', ref: 'eur-tips' },
         ],
       },
     ],
@@ -94,14 +98,14 @@ const SEED_USERS: SeedUserPlan[] = [
     email: 'seed.camila@example.com',
     wallets: [
       {
-        currency: 'USD',
+        currency: Currency.GBP,
         transactions: [
-          { dayOffset: -4, hour: 8, minute: 0, type: TransactionType.CREDIT, amount: '500.0000', description: 'LATAM float', ref: 'latam-float' },
-          { dayOffset: -3, hour: 19, minute: 30, type: TransactionType.DEBIT, amount: '80.0000', description: 'City payout batch', ref: 'latam-batch' },
-          { dayOffset: -2, hour: 7, minute: 45, type: TransactionType.DEBIT, amount: '25.2500', description: 'Chargeback', ref: 'latam-cb' },
-          { dayOffset: -1, hour: 12, minute: 12, type: TransactionType.CREDIT, amount: '60.0000', description: 'Refund credit', ref: 'latam-refund' },
-          { dayOffset: 0, hour: 8, minute: 8, type: TransactionType.CREDIT, amount: '30.0000', description: 'Micro top-up', ref: 'latam-micro' },
-          { dayOffset: 0, hour: 18, minute: 18, type: TransactionType.DEBIT, amount: '12.7500', description: 'Evening debit', ref: 'latam-eve' },
+          { dayOffset: -4, hour: 8, minute: 0, type: TransactionType.CREDIT, amount: '500.0000', description: 'GBP float', ref: 'gbp-float' },
+          { dayOffset: -3, hour: 19, minute: 30, type: TransactionType.DEBIT, amount: '80.0000', description: 'City payout batch', ref: 'gbp-batch' },
+          { dayOffset: -2, hour: 7, minute: 45, type: TransactionType.DEBIT, amount: '25.2500', description: 'Chargeback', ref: 'gbp-cb' },
+          { dayOffset: -1, hour: 12, minute: 12, type: TransactionType.CREDIT, amount: '60.0000', description: 'Refund credit', ref: 'gbp-refund' },
+          { dayOffset: 0, hour: 8, minute: 8, type: TransactionType.CREDIT, amount: '30.0000', description: 'Micro top-up', ref: 'gbp-micro' },
+          { dayOffset: 0, hour: 18, minute: 18, type: TransactionType.DEBIT, amount: '12.7500', description: 'Evening debit', ref: 'gbp-eve' },
         ],
       },
     ],
@@ -112,12 +116,12 @@ const SEED_USERS: SeedUserPlan[] = [
     email: 'seed.daniel@example.com',
     wallets: [
       {
-        currency: 'NGN',
+        currency: Currency.CNY,
         transactions: [
-          { dayOffset: -1, hour: 6, minute: 0, type: TransactionType.CREDIT, amount: '150000.0000', description: 'NGN treasury load', ref: 'ngn-load' },
-          { dayOffset: -1, hour: 15, minute: 30, type: TransactionType.DEBIT, amount: '22500.5000', description: 'Lagos payouts', ref: 'ngn-lagos' },
-          { dayOffset: 0, hour: 9, minute: 0, type: TransactionType.DEBIT, amount: '8750.2500', description: 'Agent float', ref: 'ngn-agent' },
-          { dayOffset: 0, hour: 14, minute: 40, type: TransactionType.CREDIT, amount: '10000.0000', description: 'Midday refill', ref: 'ngn-refill' },
+          { dayOffset: -1, hour: 6, minute: 0, type: TransactionType.CREDIT, amount: '150000.0000', description: 'CNY treasury load', ref: 'cny-load' },
+          { dayOffset: -1, hour: 15, minute: 30, type: TransactionType.DEBIT, amount: '22500.5000', description: 'City payouts', ref: 'cny-city' },
+          { dayOffset: 0, hour: 9, minute: 0, type: TransactionType.DEBIT, amount: '8750.2500', description: 'Agent float', ref: 'cny-agent' },
+          { dayOffset: 0, hour: 14, minute: 40, type: TransactionType.CREDIT, amount: '10000.0000', description: 'Midday refill', ref: 'cny-refill' },
         ],
       },
     ],

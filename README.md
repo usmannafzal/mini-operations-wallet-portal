@@ -190,7 +190,7 @@ Tests require a reachable Postgres (e.g. `docker compose up -d db`).
   would eventually need paging/filtering.
 - No authentication/authorization — out of scope for this assessment.
 - "Day" in the daily summary is fixed to **UTC**; there is no per-request timezone option.
-- Wallet `currency` is validated as ISO-4217 but there is no cross-currency conversion.
+- Wallet `currency` is restricted to a fixed enum (`USD`, `EUR`, `GBP`, `JPY`, `KRW`, `CNY`); there is no cross-currency conversion.
 - `numeric(20,4)` caps amounts at 16 integer digits; larger values would be rejected by the DB.
 
 ## AI Usage Disclosure

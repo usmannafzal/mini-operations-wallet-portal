@@ -5,7 +5,7 @@ import { DataSource } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { Transaction } from './entities/transaction.entity';
-import { Wallet } from './entities/wallet.entity';
+import { Currency, Wallet } from './entities/wallet.entity';
 import { WalletsService } from './wallets.service';
 
 /**
@@ -38,7 +38,7 @@ async function seedWallet(initialBalance = '0'): Promise<string> {
     .save({ name: 'Test', phone: '+10000000000', email: `u${Date.now()}${Math.random()}@t.com` });
   const wallet = await dataSource
     .getRepository(Wallet)
-    .save({ userId: user.id, currency: 'USD', balance: initialBalance });
+    .save({ userId: user.id, currency: Currency.USD, balance: initialBalance });
   return wallet.id;
 }
 
