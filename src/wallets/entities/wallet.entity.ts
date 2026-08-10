@@ -16,20 +16,20 @@ export enum WalletStatus {
   INACTIVE = 'inactive',
 }
 
-@Entity("wallets")
+@Entity()
 export class Wallet {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
   @Column({ type: 'uuid' })
-  userId!: string;
+  userId: string;
 
   @ManyToOne(() => User, (user) => user.wallets)
   @JoinColumn({ name: 'userId' })
-  user!: User;
+  user: User;
 
   @Column({ type: 'varchar', length: 3 })
-  currency!: string;
+  currency: string;
 
   /**
    * Money is stored as Postgres `numeric` (NOT float) to avoid binary
@@ -43,17 +43,17 @@ export class Wallet {
    * which comfortably covers sub-cent fees/FX while staying exact.
    */
   @Column({ type: 'numeric', precision: 20, scale: 4, default: 0 })
-  balance!: string;
+  balance: string;
 
   @Column({ type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
-  status!: WalletStatus;
+  status: WalletStatus;
 
   @OneToMany(() => Transaction, (transaction) => transaction.wallet)
-  transactions!: Transaction[];
+  transactions: Transaction[];
 
-  @CreateDateColumn()
-  createdAt!: Date;
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt!: Date;
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
 }
