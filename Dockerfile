@@ -13,6 +13,5 @@ RUN yarn build
 
 EXPOSE 3000
 
-# On container start: apply any pending DB migrations, then launch the compiled app.
-# Running migrations here keeps the schema in sync without a manual step.
+# Apply pending migrations, then start the compiled app.
 CMD ["sh", "-c", "yarn migration:run && node dist/main.js"]

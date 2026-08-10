@@ -1,98 +1,198 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Mini Operations Wallet Portal — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A scoped-down financial control panel backend of the kind used inside ride-hailing / delivery
+platforms: users, wallets, money movement (credit/debit), a per-wallet transaction ledger, and a
+computed daily summary report. Built with standard NestJS — no exotic patterns.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech stack
 
-## Description
+- **NestJS** (TypeScript)
+- **PostgreSQL**
+- **TypeORM** (with SQL migrations)
+- **class-validator / class-transformer** for DTO validation
+- **decimal.js** for exact money math
+- **Swagger** (`@nestjs/swagger`) for API docs
+- **Jest** for tests
+- **Docker Compose** for local setup (app + Postgres)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Endpoints
 
-## Project setup
+| Method | Path                          | Description                                        |
+| ------ | ----------------------------- | -------------------------------------------------- |
+| POST   | `/users`                      | Create a user                                      |
+| GET    | `/users`                      | List users                                         |
+| POST   | `/wallets`                    | Create a wallet for a user                         |
+| GET    | `/wallets/:id`                | Get wallet detail                                  |
+| POST   | `/wallets/:id/credit`         | Credit (add funds to) a wallet                     |
+| POST   | `/wallets/:id/debit`          | Debit (remove funds from) a wallet                 |
+| GET    | `/wallets/:id/transactions`   | List a wallet's transactions (newest first)        |
+| GET    | `/reports/daily-summary`      | Daily summary (optional `?date=YYYY-MM-DD`, UTC)   |
 
-```bash
-$ yarn install
-```
+Interactive API docs (Swagger UI) are served at **`/docs`** once the app is running.
 
-## Compile and run the project
+## Quick start with Docker Compose
 
-```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
-```
-
-## Run tests
+The compose file runs two services: `app` (NestJS) and `db` (Postgres). On startup the app waits
+for Postgres to be healthy, runs migrations, then serves.
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+cp .env.example .env
+docker compose up --build
 ```
 
-## Deployment
+- API: http://localhost:3000
+- Swagger UI: http://localhost:3000/docs
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Running locally (without Docker for the app)
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Requires Node 22+ and a reachable Postgres. You can start just the database with compose:
 
 ```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
+docker compose up -d db        # Postgres on localhost:5432
+
+yarn install
+yarn migration:run             # builds, then applies pending migrations
+yarn start:dev                 # watch mode
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+> Migration scripts always run `yarn build` first because the TypeORM CLI loads
+> `dist/database/data-source.js`. That file shares the entity list with `AppModule`
+> and reads the same `DB_*` env vars.
 
-## Resources
+### Migration commands
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# Apply pending migrations
+yarn migration:run
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Revert the last migration
+yarn migration:revert
 
-## Support
+# Show migration status
+yarn migration:show
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Generate a new migration from entity ↔ DB diffs (path is required)
+yarn migration:generate src/database/migrations/DescribeYourChange
+```
 
-## Stay in touch
+## Environment variables
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Defined in `.env` (see `.env.example`). The app and the migration CLI read the same variables.
 
-## License
+| Variable      | Description                          | Local default |
+| ------------- | ------------------------------------ | ------------- |
+| `PORT`        | HTTP port the API listens on         | `3000`        |
+| `DB_HOST`     | Postgres host (`db` inside compose)  | `localhost`   |
+| `DB_PORT`     | Postgres port                        | `5432`        |
+| `DB_USERNAME` | Postgres user                        | `postgres`    |
+| `DB_PASSWORD` | Postgres password                    | `postgres`    |
+| `DB_NAME`     | Postgres database                    | `wallet`      |
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Architecture overview
+
+Standard NestJS layering — **Controller → Service → Repository**:
+
+- Controllers handle only HTTP concerns (routing, params/body, status codes) and delegate to services.
+- Services hold all business rules (balance checks, idempotency, locking, decimal math).
+- Repositories are TypeORM repositories; no custom abstraction on top.
+
+Modules:
+
+- `UsersModule` — user creation/listing.
+- `WalletsModule` — wallets **and** transactions. Transactions are owned by wallets and a
+  credit/debit writes the wallet update and the transaction row in a single DB transaction, so
+  keeping them in one module avoids cross-module coupling.
+- `ReportsModule` — read-only aggregate reporting over the transactions table.
+
+Data model:
+
+- **User**: `id`, `name`, `phone`, `email`, `status`, timestamps.
+- **Wallet**: `id`, `userId` (FK), `currency`, `balance`, `status`, timestamps.
+- **Transaction**: `id`, `walletId` (FK), `type` (credit/debit), `amount`, `balanceBefore`,
+  `balanceAfter`, `referenceId` (unique), `description`, `createdAt`. Transactions are immutable.
+- **DailySummary**: **not** a table. It's computed on the fly from `transactions` (see below).
+
+### Money & decimal handling
+
+All money columns are Postgres `numeric(20,4)` — never `float`/`double`. The `pg` driver returns
+`numeric` as JavaScript **strings**, so balances/amounts are kept as strings and all arithmetic is
+done with **decimal.js**. `amount` is also accepted from the client as a string (not a JSON number)
+because JSON numbers are IEEE-754 doubles and can silently lose precision. This keeps values exact
+end-to-end, from the request body to the database.
+
+### Idempotency (`referenceId`)
+
+Every credit/debit carries a caller-supplied `referenceId`. It is protected by a **unique index**
+on `transactions.referenceId`.
+
+- **Behavior on repeat:** a request that reuses a `referenceId` returns the **original**
+  transaction's result (HTTP 2xx) — it is never processed twice and never returns an error.
+- **How:** the service first does a fast-path lookup by `referenceId` and replays the original if
+  found. The unique constraint is the hard backstop for the concurrent case: if two identical
+  requests race past the lookup, the database rejects the second insert, its whole transaction
+  (including the balance change) is rolled back, and the original transaction is returned instead.
+
+### Concurrency & row-level locking
+
+Concurrent credits/debits on the same wallet must not corrupt the balance. Inside a single database
+transaction, the wallet row is read with a **pessimistic write lock**:
+
+```ts
+manager.findOne(Wallet, { where: { id }, lock: { mode: 'pessimistic_write' } });
+```
+
+This emits `SELECT ... FOR UPDATE`, so a second transaction touching the same wallet **waits** until
+the first commits. This serializes money movement per wallet: two simultaneous debits can't both read
+the same stale balance, and the balance can never be driven negative. No external locking service is
+used — just the database.
+
+### Daily summary is query-based (not persisted)
+
+`GET /reports/daily-summary` computes `totalCredits`, `totalDebits`, `transactionCount`, and
+`activeWallets` (distinct wallets transacted that day) with a single aggregate query over the
+transactions of the requested UTC day (`[date 00:00Z, next day 00:00Z)`). Persisting a summary table
+would create a second source of truth that can drift; the figures are always derivable from
+transactions, so a query is simpler and always correct.
+
+### Errors
+
+Failed operations return specific messages rather than a bare "Bad Request":
+
+- `400 INSUFFICIENT_BALANCE` — a debit that would go negative (includes the attempted and available amounts).
+- `404` — unknown user or wallet (with the id in the message).
+- `400` — validation failures (unknown/invalid fields), via the global `ValidationPipe`
+  (`whitelist` + `forbidNonWhitelisted` + `transform`).
+
+## Testing
+
+```bash
+yarn test
+```
+
+The wallet money-movement logic is covered by **integration** tests (`src/wallets/wallets.service.spec.ts`)
+that run against a real Postgres (a dedicated `wallet_test` database, auto-created by the test setup) —
+because locking, the unique-constraint idempotency backstop, and numeric precision only exist at the
+database level. They cover:
+
+1. Credit updates balance and records correct `balanceBefore`/`balanceAfter`.
+2. Debit updates balance correctly.
+3. A debit that would make the balance negative is rejected (and rolls back cleanly).
+4. A duplicate `referenceId` is not processed twice.
+5. **Concurrency (bonus):** 20 parallel debits against one wallet never overspend — exactly enough to
+   drain the balance succeed, the rest are rejected, and the balance lands at exactly zero.
+
+Tests require a reachable Postgres (e.g. `docker compose up -d db`).
+
+## Known limitations
+
+- `GET /wallets/:id/transactions` returns the full list with no pagination; a high-volume wallet
+  would eventually need paging/filtering.
+- No authentication/authorization — out of scope for this assessment.
+- "Day" in the daily summary is fixed to **UTC**; there is no per-request timezone option.
+- Wallet `currency` is validated as ISO-4217 but there is no cross-currency conversion.
+- `numeric(20,4)` caps amounts at 16 integer digits; larger values would be rejected by the DB.
+
+## AI Usage Disclosure
+
+<!-- To be completed by the author. -->
