@@ -14,7 +14,7 @@ export enum UserStatus {
 }
 
 
-@Entity()
+@Entity("users")
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -25,7 +25,7 @@ export class User {
   @Column()
   phone!: string;
 
-  @Column()
+  @Column({unique: true})
   email!: string;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
