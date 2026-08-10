@@ -20,24 +20,24 @@ export class Transaction {
   id!: string;
 
   @Column({ type: 'uuid' })
-  walletId: string;
+  walletId!: string;
 
   @ManyToOne(() => Wallet, (wallet) => wallet.transactions)
   @JoinColumn({ name: 'walletId' })
-  wallet: Wallet;
+  wallet!: Wallet;
 
   @Column({ type: 'enum', enum: TransactionType })
-  type: TransactionType;
+  type!: TransactionType;
 
   // See Wallet.balance for why money columns are `numeric` + typed as string.
   @Column({ type: 'numeric', precision: 20, scale: 4 })
-  amount: string;
+  amount!: string;
 
   @Column({ type: 'numeric', precision: 20, scale: 4 })
-  balanceBefore: string;
+  balanceBefore!: string;
 
   @Column({ type: 'numeric', precision: 20, scale: 4 })
-  balanceAfter: string;
+  balanceAfter!: string;
 
   /**
    * Caller-supplied idempotency key. A UNIQUE constraint here is the hard
@@ -46,12 +46,12 @@ export class Transaction {
    */
   @Index({ unique: true })
   @Column({ type: 'varchar' })
-  referenceId: string;
+  referenceId!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  description: string | null;
+  description!: string | null;
 
   // Transactions are immutable once written, so there is only a createdAt (no updatedAt).
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 }
