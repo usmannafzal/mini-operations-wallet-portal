@@ -19,13 +19,13 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar' })
+  @Column()
   name!: string;
 
-  @Column({ type: 'varchar' })
+  @Column()
   phone!: string;
 
-  @Column({ type: 'varchar' })
+  @Column()
   email!: string;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
@@ -34,9 +34,9 @@ export class User {
   @OneToMany(() => Wallet, (wallet) => wallet.user)
   wallets!: Wallet[];
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }
