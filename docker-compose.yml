@@ -1,3 +1,6 @@
+# Project-scoped name so compose resources don't collide with other stacks.
+name: mini-operations-wallet-portal
+
 services:
   db:
     image: postgres:16-alpine
@@ -7,15 +10,15 @@ services:
       # the app uses so there is a single set of credentials in .env.
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-wallet}
+      POSTGRES_DB: ${DB_NAME:-mini_operations_wallet_portal}
     ports:
-      # Expose Postgres on the host so you can also run the app locally (yarn start:dev) against it.
-      - '${DB_PORT:-5432}:5432'
+      # Expose Postgres on a non-default host port so it won't clash with a local Postgres on 5432.
+      - '${DB_PORT:-5433}:5432'
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - mini_operations_wallet_portal_pgdata:/var/lib/postgresql/data
     healthcheck:
       # The app waits for this to pass before starting, so migrations don't hit a cold DB.
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-wallet}']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-mini_operations_wallet_portal}']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -27,15 +30,15 @@ services:
       db:
         condition: service_healthy
     environment:
-      PORT: ${PORT:-3000}
+      PORT: ${PORT:-3001}
       # Inside the compose network the DB host is the service name "db", not localhost.
       DB_HOST: db
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-wallet}
+      DB_NAME: ${DB_NAME:-mini_operations_wallet_portal}
     ports:
-      - '${PORT:-3000}:${PORT:-3000}'
+      - '${PORT:-3001}:${PORT:-3001}'
 
 volumes:
-  db_data:
+  mini_operations_wallet_portal_pgdata:
