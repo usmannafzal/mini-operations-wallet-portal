@@ -37,8 +37,8 @@ export class Wallet {
   @JoinColumn({ name: 'userId' })
   user!: User;
 
-  @Column({ type: "enum", enum: Currency })
-  currency!: string;
+  @Column({ type: 'enum', enum: Currency })
+  currency!: Currency;
 
   /**
    * Money is stored as Postgres `numeric` (NOT float) to avoid binary
