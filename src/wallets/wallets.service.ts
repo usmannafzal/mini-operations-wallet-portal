@@ -12,14 +12,9 @@ import { CreateWalletDto } from './dtos/create-wallet.dto';
 import { Transaction, TransactionType } from './entities/transaction.entity';
 import { Wallet } from './entities/wallet.entity';
 
-// Postgres error code for a unique-constraint violation.
 const PG_UNIQUE_VIOLATION = '23505';
 
-/**
- * Result of a credit/debit. `replayed` is true when an existing transaction with the
- * same referenceId was returned (idempotent replay) instead of a new one being applied.
- * Callers (e.g. the controller) use this to signal the outcome to clients (HTTP 200 vs 201).
- */
+
 export interface TransactionResult {
   transaction: Transaction;
   replayed: boolean;
@@ -59,7 +54,6 @@ export class WalletsService {
     return wallet;
   }
 
-  // List a wallet's transactions, newest first
   async listTransactions(walletId: string): Promise<Transaction[]> {
     await this.getById(walletId);
     return this.transactionsRepository.find({
@@ -189,7 +183,6 @@ export class WalletsService {
   }
 
   private isUniqueViolation(err: unknown): boolean {
-    // TypeORM wraps the driver error; the pg error code lives on either object.
     const code =
       (err as { code?: string })?.code ??
       (err as { driverError?: { code?: string } })?.driverError?.code;
