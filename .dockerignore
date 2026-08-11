@@ -4,3 +4,5 @@ coverage
 .git
 .env
 *.log
+# Frontend has its own image build context — keep it out of the Nest image.
+front-end
