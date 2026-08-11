@@ -253,6 +253,6 @@ Font-end side has been written by AI since the job application requires someone 
 
 Backend side is AI assisted. I was asking for suggestions from AI to implement the requirements in the best way possible and avoid mistakes.
 
-AI has been used extensively for the document purposes in the [READ.md](http://READ.md) files and swagger documentation to save times
+AI has been used extensively for the document purposes in the [READ.md](http://READ.md) files and swagger documentation to save time.
 
-I can explain each and everything at the backend side in the live sessions and can make changes anywhere in the codes
+I can explain each and everything at the backend side in the live sessions and can make changes anywhere in the code.
