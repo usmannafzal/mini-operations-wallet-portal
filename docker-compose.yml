@@ -40,5 +40,22 @@ services:
     ports:
       - '${PORT:-3001}:${PORT:-3001}'
 
+  # Next.js UI. Browser → web:3000/backend/* → Next rewrite → app:3001/* on the
+  # Compose network (service DNS name "app"). One `docker compose up` runs all three.
+  web:
+    build:
+      context: ./front-end
+      args:
+        NEXT_PUBLIC_API_URL: /backend
+        API_PROXY_TARGET: http://app:3001
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      NEXT_PUBLIC_API_URL: /backend
+      API_PROXY_TARGET: http://app:3001
+    ports:
+      - '3000:3000'
+
 volumes:
   mini_operations_wallet_portal_pgdata:

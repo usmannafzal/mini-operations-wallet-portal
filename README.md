@@ -13,7 +13,7 @@ computed daily summary report. Built with standard NestJS — no exotic patterns
 - **decimal.js** for exact money math
 - **Swagger** (`@nestjs/swagger`) for API docs
 - **Jest** for tests
-- **Docker Compose** for local setup (app + Postgres)
+- **Docker Compose** for local setup (db + app + web)
 
 ## Endpoints
 
@@ -30,18 +30,31 @@ computed daily summary report. Built with standard NestJS — no exotic patterns
 
 Interactive API docs (Swagger UI) are served at **`/docs`** once the app is running.
 
+## Docker Compose services
+
+| Service | Role | Host URL |
+|---|---|---|
+| `db` | Postgres 16 | `localhost:5433` (default) |
+| `app` | NestJS API | http://localhost:3001 |
+| `web` | Next.js UI (`front-end/`) | http://localhost:3000 |
+
+The web container proxies `/backend/*` to `http://app:3001` on the Compose network.
+
 ## Quick start with Docker Compose
 
-The compose file runs two services: `app` (NestJS) and `db` (Postgres). On startup the app waits
-for Postgres to be healthy, runs migrations, then serves.
+On startup the app waits for Postgres to be healthy, runs migrations, then serves.
+One command starts `db` + `app` + `web`:
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
+- Web UI: http://localhost:3000
 - API: http://localhost:3001
 - Swagger UI: http://localhost:3001/docs
+
+Frontend details and the manual test checklist live in [`front-end/README.md`](front-end/README.md).
 
 ## Running locally (without Docker for the app)
 
