@@ -8,16 +8,18 @@ Package manager: **Yarn** (v1). `yarn.lock` is the source of truth.
 The browser never calls the Nest container by Docker hostname (that DNS name is not
 reachable from your laptop). Instead:
 
-1. The UI calls same-origin **`/backend/...`** (`NEXT_PUBLIC_API_URL=/backend`).
-2. Next.js **rewrites** `/backend/:path*` → `API_PROXY_TARGET/:path*`.
+1. The UI calls same-origin `/backend/...` (`NEXT_PUBLIC_API_URL=/backend`).
+2. Next.js **rewrites** `/backend/:path`* → `API_PROXY_TARGET/:path*`.
 3. In Compose, `API_PROXY_TARGET=http://app:3001`, so the **web** container reaches
-   the **app** container over the Compose network.
+  the **app** container over the Compose network.
 
 ```
 Browser → http://localhost:3000/backend/users
        → web container (Next rewrite)
        → http://app:3001/users   (Docker network)
 ```
+
+
 
 ## Quick start (full stack)
 
@@ -28,9 +30,11 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- Web UI: http://localhost:3000
-- API: http://localhost:3001
-- Swagger: http://localhost:3001/docs
+- Web UI: [http://localhost:3000](http://localhost:3000)
+- API: [http://localhost:3001](http://localhost:3001)
+- Swagger: [http://localhost:3001/docs](http://localhost:3001/docs)
+
+
 
 ## Local frontend only (API already running)
 
@@ -47,21 +51,31 @@ NEXT_PUBLIC_API_URL=/backend
 API_PROXY_TARGET=http://localhost:3001
 ```
 
+
+
 ## Environment variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | Yes | Browser API base — use `/backend` with the Next rewrite |
-| `API_PROXY_TARGET` | Yes (server) | Nest base URL for the rewrite (`http://localhost:3001` locally, `http://app:3001` in Docker) |
+
+| Variable              | Required     | Description                                                                                  |
+| --------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | Yes          | Browser API base — use `/backend` with the Next rewrite                                      |
+| `API_PROXY_TARGET`    | Yes (server) | Nest base URL for the rewrite (`http://localhost:3001` locally, `http://app:3001` in Docker) |
+
+
+
 
 ## Page overview
 
-| Route | Purpose |
-|---|---|
-| `/dashboard` | Today’s daily-summary stats + open wallet by ID |
-| `/users` | Create user, list users, create wallet |
+
+| Route           | Purpose                                                       |
+| --------------- | ------------------------------------------------------------- |
+| `/dashboard`    | Today’s daily-summary stats + open wallet by ID               |
+| `/users`        | Create user, list users, create wallet                        |
 | `/wallets/[id]` | Wallet balance/status, credit/debit form, transaction history |
-| `/reports` | Daily summary with YYYY-MM-DD date filter |
+| `/reports`      | Daily summary with YYYY-MM-DD date filter                     |
+
+
+
 
 ### Dashboard data source
 
@@ -79,7 +93,11 @@ a separate wallets index page.
 - `lib/api.ts` — thin typed `fetch` wrappers
 - `types/` — TypeScript shapes matching the backend
 
+
+
 ## Manual test checklist
+
+
 
 ### Happy path
 
@@ -90,11 +108,15 @@ a separate wallets index page.
 - [ ] **View transaction history** — type, amount, before/after, reference, description
 - [ ] **View daily summary** — `/reports` and `/dashboard`; date filter on `/reports`
 
+
+
 ### Rejection / edge cases
 
 - [ ] **Rejected over-debit** — clear insufficient-balance error; balance unchanged
-- [ ] **Duplicate referenceId** — idempotent message; balance not double-applied
+- [ ] **Duplicate referenceId** — error banner explaining the original tx was returned; balance not double-applied
 - [ ] **Client validation** — empty/invalid amount or reference blocked before API
+
+
 
 ### UI states
 

@@ -15,6 +15,16 @@ import { Wallet } from './entities/wallet.entity';
 // Postgres error code for a unique-constraint violation.
 const PG_UNIQUE_VIOLATION = '23505';
 
+/**
+ * Result of a credit/debit. `replayed` is true when an existing transaction with the
+ * same referenceId was returned (idempotent replay) instead of a new one being applied.
+ * Callers (e.g. the controller) use this to signal the outcome to clients (HTTP 200 vs 201).
+ */
+export interface TransactionResult {
+  transaction: Transaction;
+  replayed: boolean;
+}
+
 @Injectable()
 export class WalletsService {
   constructor(
@@ -58,11 +68,17 @@ export class WalletsService {
     });
   }
 
-  credit(walletId: string, dto: CreateTransactionDto): Promise<Transaction> {
+  credit(
+    walletId: string,
+    dto: CreateTransactionDto,
+  ): Promise<TransactionResult> {
     return this.applyTransaction(walletId, dto, TransactionType.CREDIT);
   }
 
-  debit(walletId: string, dto: CreateTransactionDto): Promise<Transaction> {
+  debit(
+    walletId: string,
+    dto: CreateTransactionDto,
+  ): Promise<TransactionResult> {
     return this.applyTransaction(walletId, dto, TransactionType.DEBIT);
   }
 
@@ -70,9 +86,11 @@ export class WalletsService {
    * Applies a credit or debit atomically. This method is the heart of the service and
    * satisfies four business rules at once:
    *
-   *  - Idempotency (Rule 3): the same referenceId is never applied twice. We short-circuit
-   *    on a fast path, and the unique DB constraint is the hard backstop for concurrent
-   *    duplicates (the losing insert is caught and the original transaction is returned).
+   *  - Idempotency (Rule 3): the same referenceId is never applied twice on the same wallet.
+   *    We short-circuit on a fast path, and the unique DB constraint on (walletId, referenceId)
+   *    is the hard backstop for concurrent duplicates (the losing insert is caught and the
+   *    original transaction is returned). The key is scoped per wallet, so it may be reused
+   *    on a different wallet.
    *  - Concurrency safety (Rule 4): the wallet row is read with a pessimistic write lock
    *    (SELECT ... FOR UPDATE) inside a DB transaction, so two simultaneous operations on
    *    the same wallet are serialized and can't both act on a stale balance.
@@ -85,12 +103,12 @@ export class WalletsService {
     walletId: string,
     dto: CreateTransactionDto,
     type: TransactionType,
-  ): Promise<Transaction> {
-    // Fast path: if we've already processed this referenceId, replay the original
-    // result instead of doing the work again. This is the documented idempotent behavior.
-    const existing = await this.findByReferenceId(dto.referenceId);
+  ): Promise<TransactionResult> {
+    // Fast path: if we've already processed this referenceId on this wallet, replay the
+    // original result instead of doing the work again. This is the documented idempotent behavior.
+    const existing = await this.findByReference(walletId, dto.referenceId);
     if (existing) {
-      return existing;
+      return { transaction: existing, replayed: true };
     }
 
     const amount = new Decimal(dto.amount);
@@ -100,7 +118,7 @@ export class WalletsService {
     }
 
     try {
-      return await this.dataSource.transaction(async (manager) => {
+      const saved = await this.dataSource.transaction(async (manager) => {
         // Row-level lock. This emits `SELECT ... FOR UPDATE` on the wallet row, so any
         // other transaction trying to lock the same wallet waits until we commit.
         const wallet = await manager.findOne(Wallet, {
@@ -147,21 +165,27 @@ export class WalletsService {
         // the balance update above) is rolled back, keeping the operation atomic.
         return await manager.save(transaction);
       });
+      return { transaction: saved, replayed: false };
     } catch (err) {
       // Concurrent duplicate reference: the unique constraint rejected our insert and
       // rolled us back. Return the transaction that actually won the race.
       if (this.isUniqueViolation(err)) {
-        const winner = await this.findByReferenceId(dto.referenceId);
+        const winner = await this.findByReference(walletId, dto.referenceId);
         if (winner) {
-          return winner;
+          return { transaction: winner, replayed: true };
         }
       }
       throw err;
     }
   }
 
-  private findByReferenceId(referenceId: string): Promise<Transaction | null> {
-    return this.transactionsRepository.findOne({ where: { referenceId } });
+  private findByReference(
+    walletId: string,
+    referenceId: string,
+  ): Promise<Transaction | null> {
+    return this.transactionsRepository.findOne({
+      where: { walletId, referenceId },
+    });
   }
 
   private isUniqueViolation(err: unknown): boolean {

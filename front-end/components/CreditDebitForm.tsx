@@ -7,8 +7,6 @@ import ErrorMessage from "@/components/ErrorMessage";
 
 type CreditDebitFormProps = {
   walletId: string;
-  /** Used to detect idempotent replay of an existing referenceId (backend returns 2xx). */
-  knownReferenceIds?: string[];
   onSuccess: (tx: Transaction, meta: { replayed: boolean }) => void;
 };
 
@@ -37,7 +35,6 @@ function validate(input: CreateTransactionInput): FormErrors {
 
 export default function CreditDebitForm({
   walletId,
-  knownReferenceIds = [],
   onSuccess,
 }: CreditDebitFormProps) {
   const [type, setType] = useState<"credit" | "debit">("credit");
@@ -66,28 +63,28 @@ export default function CreditDebitForm({
       return;
     }
 
-    // Backend returns the original tx on duplicate referenceId (HTTP 2xx), so we
-    // detect replay by checking whether this reference was already in history.
-    const isReplay = knownReferenceIds.includes(input.referenceId);
-
     setSubmitting(true);
     try {
-      const tx =
+      const { transaction: tx, replayed } =
         type === "credit"
           ? await creditWallet(walletId, input)
           : await debitWallet(walletId, input);
 
-      if (isReplay) {
-        setSuccessMessage(
-          "Duplicate referenceId — returned the original transaction (no double apply).",
+      // The backend is idempotent and tells us authoritatively whether this was a
+      // replay (HTTP 200) or a newly applied transaction (HTTP 201). On replay the
+      // balance was NOT changed, so surface that clearly instead of a success.
+      if (replayed) {
+        setSubmitError(
+          `Duplicate referenceId "${input.referenceId}". The original transaction was returned; the balance was not applied again.`,
         );
-      } else {
-        setSuccessMessage(
-          `${type === "credit" ? "Credited" : "Debited"} ${tx.amount} successfully.`,
-        );
+        onSuccess(tx, { replayed: true });
+        return;
       }
 
-      onSuccess(tx, { replayed: isReplay });
+      setSuccessMessage(
+        `${type === "credit" ? "Credited" : "Debited"} ${tx.amount} successfully.`,
+      );
+      onSuccess(tx, { replayed: false });
       setAmount("");
       setReferenceId("");
       setDescription("");
@@ -184,7 +181,14 @@ export default function CreditDebitForm({
       </div>
 
       {submitError && (
-        <ErrorMessage title="Request failed" message={submitError} />
+        <ErrorMessage
+          title={
+            submitError.startsWith("Duplicate referenceId")
+              ? "Duplicate referenceId"
+              : "Request failed"
+          }
+          message={submitError}
+        />
       )}
       {successMessage && (
         <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
