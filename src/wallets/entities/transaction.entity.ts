@@ -15,6 +15,13 @@ export enum TransactionType {
 }
 
 @Entity('transactions')
+// Idempotency is scoped per wallet: a referenceId only has to be unique within a
+// single wallet, so the same key can be reused across different wallets. The UNIQUE
+// constraint on (walletId, referenceId) is the hard backstop against processing the
+// same logical operation twice on a wallet, even under concurrent retries.
+@Index('UQ_transactions_wallet_reference', ['walletId', 'referenceId'], {
+  unique: true,
+})
 export class Transaction {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -40,11 +47,10 @@ export class Transaction {
   balanceAfter!: string;
 
   /**
-   * Caller-supplied idempotency key. A UNIQUE constraint here is the hard
-   * guarantee that the same logical operation can never be recorded twice,
-   * even under concurrent retries (the DB rejects the second insert).
+   * Caller-supplied idempotency key. Uniqueness is enforced per wallet via the
+   * composite index above (walletId, referenceId), so the same key can safely be
+   * reused on a different wallet.
    */
-  @Index({ unique: true })
   @Column({ type: 'varchar' })
   referenceId!: string;
 

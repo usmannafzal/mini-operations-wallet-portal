@@ -88,15 +88,19 @@ afterAll(async () => {
 
 beforeEach(async () => {
   // Isolate every test with a clean slate.
-  await dataSource.query('TRUNCATE TABLE transactions, wallets, users RESTART IDENTITY CASCADE');
+  await dataSource.query('TRUNCATE TABLE transactions, wallet, users RESTART IDENTITY CASCADE');
 });
 
 describe('WalletsService money movement', () => {
   it('credit: updates balance and records correct balanceBefore/balanceAfter', async () => {
     const walletId = await seedWallet('0');
 
-    const tx = await service.credit(walletId, { amount: '100.50', referenceId: 'credit-1' });
+    const { transaction: tx, replayed } = await service.credit(walletId, {
+      amount: '100.50',
+      referenceId: 'credit-1',
+    });
 
+    expect(replayed).toBe(false);
     expect(tx.type).toBe('credit');
     expect(tx.amount).toBe('100.5000');
     expect(tx.balanceBefore).toBe('0.0000');
@@ -110,7 +114,10 @@ describe('WalletsService money movement', () => {
     const walletId = await seedWallet('0');
     await service.credit(walletId, { amount: '100', referenceId: 'seed' });
 
-    const tx = await service.debit(walletId, { amount: '30.25', referenceId: 'debit-1' });
+    const { transaction: tx } = await service.debit(walletId, {
+      amount: '30.25',
+      referenceId: 'debit-1',
+    });
 
     expect(tx.type).toBe('debit');
     expect(tx.balanceBefore).toBe('100.0000');
@@ -143,12 +150,35 @@ describe('WalletsService money movement', () => {
     const first = await service.credit(walletId, { amount: '100', referenceId: 'dup-key' });
     const second = await service.credit(walletId, { amount: '100', referenceId: 'dup-key' });
 
+    // First is a fresh apply; second is an idempotent replay of the same transaction.
+    expect(first.replayed).toBe(false);
+    expect(second.replayed).toBe(true);
     // Same transaction returned, balance credited once, only one row exists.
-    expect(second.id).toBe(first.id);
+    expect(second.transaction.id).toBe(first.transaction.id);
     const wallet = await service.getById(walletId);
     expect(wallet.balance).toBe('100.0000');
     const total = await dataSource.getRepository(Transaction).count({ where: { walletId } });
     expect(total).toBe(1);
+  });
+
+  it('idempotency is scoped per wallet: the same referenceId works on a different wallet', async () => {
+    const walletA = await seedWallet('0');
+    const walletB = await seedWallet('0');
+
+    const a = await service.credit(walletA, { amount: '100', referenceId: 'shared-ref' });
+    // Same referenceId on a different wallet is a brand-new transaction, not a replay.
+    const b = await service.credit(walletB, { amount: '40', referenceId: 'shared-ref' });
+
+    expect(a.replayed).toBe(false);
+    expect(b.replayed).toBe(false);
+    expect(b.transaction.id).not.toBe(a.transaction.id);
+    expect((await service.getById(walletA)).balance).toBe('100.0000');
+    expect((await service.getById(walletB)).balance).toBe('40.0000');
+
+    // Reusing it again on wallet A is still an idempotent replay for that wallet.
+    const aAgain = await service.credit(walletA, { amount: '100', referenceId: 'shared-ref' });
+    expect(aAgain.replayed).toBe(true);
+    expect(aAgain.transaction.id).toBe(a.transaction.id);
   });
 
   /**

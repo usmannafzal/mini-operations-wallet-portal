@@ -44,7 +44,10 @@ type NestErrorBody = {
   error?: string;
 };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function requestWithResponse<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<{ data: T; response: Response }> {
   const response = await fetch(`${getBaseUrl()}${path}`, {
     ...init,
     headers: {
@@ -78,10 +81,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   // 204 / empty body safety (none of our endpoints use it today, but keep parse safe).
   if (response.status === 204) {
-    return undefined as T;
+    return { data: undefined as T, response };
   }
 
-  return (await response.json()) as T;
+  return { data: (await response.json()) as T, response };
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const { data } = await requestWithResponse<T>(path, init);
+  return data;
 }
 
 export function getUsers(): Promise<User[]> {
@@ -110,24 +118,36 @@ export function getTransactions(walletId: string): Promise<Transaction[]> {
   return request<Transaction[]>(`/wallets/${walletId}/transactions`);
 }
 
-export function creditWallet(
-  walletId: string,
-  input: CreateTransactionInput,
-): Promise<Transaction> {
-  return request<Transaction>(`/wallets/${walletId}/credit`, {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
+/**
+ * Result of a credit/debit. `replayed` is the authoritative idempotency signal from the
+ * backend: the API returns HTTP 201 for a newly applied transaction and HTTP 200 when the
+ * referenceId was already used (the original transaction is returned, balance unchanged).
+ */
+export interface TransactionResult {
+  transaction: Transaction;
+  replayed: boolean;
 }
 
-export function debitWallet(
+export async function creditWallet(
   walletId: string,
   input: CreateTransactionInput,
-): Promise<Transaction> {
-  return request<Transaction>(`/wallets/${walletId}/debit`, {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
+): Promise<TransactionResult> {
+  const { data, response } = await requestWithResponse<Transaction>(
+    `/wallets/${walletId}/credit`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return { transaction: data, replayed: response.status === 200 };
+}
+
+export async function debitWallet(
+  walletId: string,
+  input: CreateTransactionInput,
+): Promise<TransactionResult> {
+  const { data, response } = await requestWithResponse<Transaction>(
+    `/wallets/${walletId}/debit`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return { transaction: data, replayed: response.status === 200 };
 }
 
 export function getDailySummary(date?: string): Promise<DailySummary> {

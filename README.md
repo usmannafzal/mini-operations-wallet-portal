@@ -86,7 +86,7 @@ yarn migration:revert
 yarn migration:show
 
 # Generate a new migration from entity ↔ DB diffs (path is required)
-yarn migration:generate src/database/migrations/DescribeYourChange
+yarn migration:generate 
 ```
 
 ## Environment variables
@@ -123,7 +123,7 @@ Data model:
 - **User**: `id`, `name`, `phone`, `email`, `status`, timestamps.
 - **Wallet**: `id`, `userId` (FK), `currency`, `balance`, `status`, timestamps.
 - **Transaction**: `id`, `walletId` (FK), `type` (credit/debit), `amount`, `balanceBefore`,
-  `balanceAfter`, `referenceId` (unique), `description`, `createdAt`. Transactions are immutable.
+  `balanceAfter`, `referenceId` (unique per wallet), `description`, `createdAt`. Transactions are immutable.
 - **DailySummary**: **not** a table. It's computed on the fly from `transactions` (see below).
 
 ### Money & decimal handling
@@ -136,15 +136,21 @@ end-to-end, from the request body to the database.
 
 ### Idempotency (`referenceId`)
 
-Every credit/debit carries a caller-supplied `referenceId`. It is protected by a **unique index**
-on `transactions.referenceId`.
+Every credit/debit carries a caller-supplied `referenceId`. Idempotency is **scoped per wallet**:
+it is protected by a **composite unique index** on `transactions (walletId, referenceId)`, so a
+`referenceId` must be unique within a wallet but may be reused on a different wallet.
 
-- **Behavior on repeat:** a request that reuses a `referenceId` returns the **original**
-  transaction's result (HTTP 2xx) — it is never processed twice and never returns an error.
-- **How:** the service first does a fast-path lookup by `referenceId` and replays the original if
-  found. The unique constraint is the hard backstop for the concurrent case: if two identical
-  requests race past the lookup, the database rejects the second insert, its whole transaction
-  (including the balance change) is rolled back, and the original transaction is returned instead.
+- **Behavior on repeat (same wallet):** a request that reuses a `referenceId` on the same wallet
+  returns the **original** transaction's result with **HTTP 200** — it is never processed twice and
+  never returns an error. A newly applied transaction returns **HTTP 201**, so clients can tell a
+  genuine apply from an idempotent replay.
+- **Behavior on a different wallet:** the same `referenceId` used on another wallet is a brand-new
+  transaction (HTTP 201).
+- **How:** the service first does a fast-path lookup by `(walletId, referenceId)` and replays the
+  original if found. The unique constraint is the hard backstop for the concurrent case: if two
+  identical requests race past the lookup, the database rejects the second insert, its whole
+  transaction (including the balance change) is rolled back, and the original transaction is
+  returned instead.
 
 ### Concurrency & row-level locking
 
@@ -191,11 +197,22 @@ database level. They cover:
 1. Credit updates balance and records correct `balanceBefore`/`balanceAfter`.
 2. Debit updates balance correctly.
 3. A debit that would make the balance negative is rejected (and rolls back cleanly).
-4. A duplicate `referenceId` is not processed twice.
-5. **Concurrency (bonus):** 20 parallel debits against one wallet never overspend — exactly enough to
+4. A duplicate `referenceId` is not processed twice on the same wallet.
+5. Idempotency is scoped per wallet — the same `referenceId` applies independently on a different wallet.
+6. **Concurrency (bonus):** 20 parallel debits against one wallet never overspend — exactly enough to
    drain the balance succeed, the rest are rejected, and the balance lands at exactly zero.
 
 Tests require a reachable Postgres (e.g. `docker compose up -d db`).
+
+## Assumptions
+
+- **Idempotency is scoped per wallet.** A `referenceId` identifies a unique operation *within a
+  single wallet*, enforced by a composite unique index on `(walletId, referenceId)`. The same key
+  can therefore be reused on a different wallet (treated as a new transaction). This assumes callers
+  generate reference IDs in a per-wallet context; if a globally unique key is ever required, the
+  index would move back to `referenceId` alone.
+- A credit/debit response uses **HTTP 201** for a newly applied transaction and **HTTP 200** for an
+  idempotent replay, so clients can distinguish the two without inspecting the payload.
 
 ## Known limitations
 
@@ -208,4 +225,8 @@ Tests require a reachable Postgres (e.g. `docker compose up -d db`).
 
 ## AI Usage Disclosure
 
-<!-- To be completed by the author. -->
+Font-end side has been written by AI since the job application requires someone with heavy backned experience so I have spent time more on the backend thinking about the strategies and implementation.
+
+Backend side is AI assisted. I was asking for suggestions from AI to implement the requirements in the best way possible and avoid mistakes.
+
+I can explain each and everything at the backend side in the live sessions and can make changes anywhere in the codes

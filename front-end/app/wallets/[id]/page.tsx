@@ -16,11 +16,14 @@ export default function WalletDetailPage() {
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (opts?: { initial?: boolean }) => {
+    const initial = opts?.initial === true;
+    if (initial) {
+      setInitialLoading(true);
+    }
     setError(null);
     try {
       const [walletData, txData] = await Promise.all([
@@ -36,12 +39,14 @@ export default function WalletDetailPage() {
         err instanceof ApiError ? err.message : "Failed to load wallet.",
       );
     } finally {
-      setLoading(false);
+      if (initial) {
+        setInitialLoading(false);
+      }
     }
   }, [walletId]);
 
   useEffect(() => {
-    void load();
+    void load({ initial: true });
   }, [load]);
 
   return (
@@ -53,18 +58,18 @@ export default function WalletDetailPage() {
         </p>
       </div>
 
-      {loading && <LoadingSpinner label="Loading wallet…" />}
-      {!loading && error && <ErrorMessage message={error} />}
+      {initialLoading && <LoadingSpinner label="Loading wallet…" />}
+      {!initialLoading && error && <ErrorMessage message={error} />}
 
-      {!loading && !error && wallet && (
+      {!initialLoading && !error && wallet && (
         <>
           <WalletCard wallet={wallet} />
 
           <CreditDebitForm
             walletId={wallet.id}
-            knownReferenceIds={transactions.map((tx) => tx.referenceId)}
             onSuccess={() => {
-              void load();
+              // Refresh balance/history without unmounting the form (so messages stay).
+              void load({ initial: false });
             }}
           />
 
